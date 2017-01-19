@@ -1,6 +1,6 @@
 from topic_chain import *
 
-
+# this code only works, if the max_incoming is set to 2 and max_outgoing=1, threshold can be adjusted
 tc = TopicChain('topic_keys.json', threshold=0.35, max_incoming=2, max_outgoing=1)
 
 
@@ -60,7 +60,6 @@ def find_root(conns, ts, ti):
 
         i += 1
         cur = next_cur[0]
-        print(i, cur)
     return i, cur
 
 
@@ -126,7 +125,6 @@ def get_forest(topic_chain):
     conns = topic_chain.table
     time_len = len(conns)
     index_len = len(conns[0])
-    print(time_len, index_len)
     topics_remain = list((i, j) for i in range(time_len+1) for j in range(index_len))
     forest = []
     for i in range(time_len):
@@ -179,25 +177,16 @@ def squeeze(tree):
             squeeze(tree.left)
             squeeze(tree.right)
 
+    return tree
+
 
 if __name__ == '__main__':
-    # print(len(tc._conn))
-    # tc.show_conns()
-    # i,ts = find_root(tc._conn, 0, 0)
-    # print(i, ts)
-    # t = tc.get_dynamic_topic(16, 6)
-    # print(t)
-    #
-    # tree = get_tree(t)
-    # print(tree)
-    # squeeze(tree)
-    # print(tree, end='\n'*3)
-    # print(depth(tree))
-    #print(in_order(tree))
-
     forest = get_forest(tc)
-    print(forest[0])
-
+    top_10 = sorted(forest, key=get_size, reverse=True)[:10]
+    top_10 = [squeeze(x) for x in top_10]
+    for tree in top_10:
+        print(tree)
+        print('*' * 200)
 
 
 
