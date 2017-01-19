@@ -16,6 +16,14 @@ class DynamicTopic:
         self._time_slice = time_slice
         self._topic_n = topic_n
 
+    @property
+    def ts(self):
+        return self._time_slice
+
+    @property
+    def ti(self):
+        return self._topic_n
+
     def next(self):
         next_time_slice = self._time_slice + 1
         if next_time_slice >= len(self._dm._conn):
@@ -53,6 +61,11 @@ class TopicChain:
         self._max_incoming = kwargs.get('max_incoming') or 2
         self._nkeys = kwargs.get('nkeys') or 20
         self._conn = self._generate_conns_from_data()
+
+    @property
+    def table(self):
+        # don't write to it # pretend it is read only
+        return self._conn
 
     @property
     def nkeys(self):

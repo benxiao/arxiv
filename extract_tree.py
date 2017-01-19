@@ -45,23 +45,23 @@ class Node:
         return '\n'.join(self._str()[0])
 
 
-def find_root(conns, start):
+def find_root(conns, ts, ti):
     """
     :param conns:
     :param start:
     :return: (topic index, level)
     """
-    i = 0
-    cur = start
+    i = ts
+    cur = ti
     while i < len(conns):
         next_cur = conns[i][cur]
-        i += 1
         if not next_cur: # if it is empty, the loop ends
             break
 
+        i += 1
         cur = next_cur[0]
-        print(cur)
-    return cur, i
+        print(i, cur)
+    return i, cur
 
 
 def depth(node):
@@ -88,57 +88,116 @@ def get_tree(root_topic):
     return root
 
 
-def in_order(node):
-    if node:
-        in_order(node.left)
-        print(list(reversed(node.key)))
-        in_order(node.right)
+def get_size(tree):
+    if not tree:
+        return 0
+    return get_size(tree.left) + get_size(tree.right) + 1
 
 
-def squeeze(node):
-    if node:
-        if not (node.left and node.right):
-            if node.left:
-                left = node.left
-                node.key.extend(left.key)
-                node.left = left.left
-                if node.left:
-                    node.left.parent = node
-                node.right = left.right
-                if node.right:
-                    node.right.parent = node
-                squeeze(node)
+def _in_order(tree, lst):
+    if tree:
+        _in_order(tree.left, lst)
+        lst.append(list(reversed(tree.key)))
+        _in_order(tree.right, lst)
 
-            elif node.right:
-                right = node.right
-                node.key.extend(right.key)
-                node.right = right.right
-                if node.right:
-                    node.right.parent = node
-                node.left = right.left
-                if node.left:
-                    node.left.parent = node
-                squeeze(node)
 
-        if node.left and node.right:
-            squeeze(node.left)
-            squeeze(node.right)
+def in_order(tree):
+    lst = []
+    _in_order(tree, lst)
+    return lst
+
+
+def _get_topics(tree, lst):
+    if tree:
+        topic = tree.key[0]
+        t = (topic.ts, topic.ti)
+        lst.append(t)
+        _get_topics(tree.left, lst)
+        _get_topics(tree.right, lst)
+
+
+def get_topics(tree):
+    lst = []
+    _get_topics(tree, lst)
+    return lst
+
+
+def get_forest(topic_chain):
+    conns = topic_chain.table
+    time_len = len(conns)
+    index_len = len(conns[0])
+    print(time_len, index_len)
+    topics_remain = list((i, j) for i in range(time_len+1) for j in range(index_len))
+    forest = []
+    for i in range(time_len):
+        for j in range(index_len):
+
+            # orphan node not connected to any tree
+            if not conns[i][j] and (i, j) in topics_remain:
+                forest.append(Node(topic_chain.get_dynamic_topic(i,j)))
+                topics_remain.remove((i,j))
+
+            else:
+                if (i, j) in topics_remain:
+                    ts, ti = find_root(conns, i, j) # find root
+                    root_topic = topic_chain.get_dynamic_topic(ts, ti) # find root topic
+                    tree = get_tree(root_topic) # construct the tree
+                    topics = get_topics(tree) # get all topics from that tree
+                    forest.append(tree)
+                    for t in topics: # remove all the seen topics from the pool (topics_remain)
+                        topics_remain.remove(t)
+
+    return forest
+
+
+def squeeze(tree):
+    if tree:
+        if not (tree.left and tree.right):
+            if tree.left:
+                left = tree.left
+                tree.key.extend(left.key)
+                tree.left = left.left
+                if tree.left:
+                    tree.left.parent = tree
+                tree.right = left.right
+                if tree.right:
+                    tree.right.parent = tree
+                squeeze(tree)
+
+            elif tree.right:
+                right = tree.right
+                tree.key.extend(right.key)
+                tree.right = right.right
+                if tree.right:
+                    tree.right.parent = tree
+                tree.left = right.left
+                if tree.left:
+                    tree.left.parent = tree
+                squeeze(tree)
+
+        if tree.left and tree.right:
+            squeeze(tree.left)
+            squeeze(tree.right)
 
 
 if __name__ == '__main__':
-    print(len(tc._conn))
-    tc.show_conns()
-    i,ts = find_root(tc._conn, 0)
-    print(i, ts)
-    t = tc.get_dynamic_topic(16, 6)
-    print(t)
+    # print(len(tc._conn))
+    # tc.show_conns()
+    # i,ts = find_root(tc._conn, 0, 0)
+    # print(i, ts)
+    # t = tc.get_dynamic_topic(16, 6)
+    # print(t)
+    #
+    # tree = get_tree(t)
+    # print(tree)
+    # squeeze(tree)
+    # print(tree, end='\n'*3)
+    # print(depth(tree))
+    #print(in_order(tree))
 
-    tree = get_tree(t)
-    print(tree)
-    squeeze(tree)
-    print(tree, end='\n'*3)
-    print(depth(tree))
-    in_order(tree)
+    forest = get_forest(tc)
+    print(forest[0])
+
 
 
 
