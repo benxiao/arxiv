@@ -24,9 +24,18 @@ class DynamicTopic:
     def ti(self):
         return self._topic_n
 
+    @property
+    def top_words(self):
+        return [x[0] for x in self.top_word_distribution(1000)]
+
+    def top_word_distribution(self, n):
+        d = self._dm.get_topic_keys(self.ts, self.ti)
+        return sorted(d.items(), key=lambda x: -x[-1])[:n]
+
+
     def next(self):
         next_time_slice = self._time_slice + 1
-        if next_time_slice >= len(self._dm._conn):
+        if next_time_slice > len(self._dm._conn):
             return []
         related_future_topic_indexes = self._dm.get_outgoing_connections(self._time_slice, self._topic_n)
         return [DynamicTopic(self._dm, next_time_slice, i) for i in related_future_topic_indexes]
@@ -38,14 +47,16 @@ class DynamicTopic:
         return [DynamicTopic(self._dm, prev_time_slice, i) for i in related_previous_topic_indexes]
 
     def __str__(self):
-        # printout = str(self._dm.get_topic_keys(self._time_slice, self._topic_n))
-        # if len(printout) > 200:
-        #     return printout[:200]+'...'
-        # return printout
-        return str((self._time_slice, self._topic_n))
+        return 'DT:'+str((self._time_slice, self._topic_n))
 
     __repr__ = __str__
 
+    @classmethod
+    def common_words(cls, dynamic_topics, n):
+        common = set(dynamic_topics[0].top_words)
+        for i in range(1, len(dynamic_topics)):
+            common = common.intersection(set(dynamic_topics[i].top_words))
+        return list(common)[:n]
 
 class TopicChain:
     """
@@ -185,17 +196,3 @@ if __name__ == '__main__':
                     max_outgoing=1
                     )
 
-    for slice in dm._conn:
-        print(slice)
-    # print(dm.get_topics_with_outgoing_connections(0))
-    # print(dm.get_outgoing_connections(0, 2))
-    # print(dm.get_topic_keys(0, 14))
-    # print(dm.get_topic_keys(1, 0))
-    # print(dm._conn)
-    # dm.threshold = 0.4
-    # print("*" * 200)
-    # print(dm._conn)
-    # print(dm.get_dynamic_topic(0,0))
-    # print(dm.get_dynamic_topic(0,0).next())
-    # dm.max_outgoing = 1
-    # print(dm._conn)

@@ -1,7 +1,6 @@
 from topic_chain import *
 
 # this code only works, if the max_incoming is set to 2 and max_outgoing=1, threshold can be adjusted
-tc = TopicChain('topic_keys.json', threshold=0.35, max_incoming=2, max_outgoing=1)
 
 
 class Node:
@@ -180,17 +179,25 @@ def squeeze(tree):
     return tree
 
 
-if __name__ == '__main__':
+
+
+def extract(tc, n, verbose=False):
     forest = get_forest(tc)
-    top_10 = sorted(forest, key=get_size, reverse=True)[:10]
-    top_10 = [squeeze(x) for x in top_10]
-    for tree in top_10:
-        print(tree)
-        print('*' * 200)
+    top_n = sorted(forest, key=get_size, reverse=True)[:n]
+    top_n = [squeeze(x) for x in top_n]
+    if verbose:
+        for t in top_n:
+            print(t)
+            print('*' * 200)
 
 
+    top_n_ordered = [in_order(x) for x in top_n]
+    return top_n_ordered
 
 
+if __name__ == '__main__':
+    tc = TopicChain('topic_keys.json', threshold=0.35, max_incoming=2, max_outgoing=1)
+    print(extract(tc, 10, verbose=True))
 
 
 
