@@ -11,11 +11,11 @@ class VisLineFormat:
         self._lines = lines
         self._labels = labels
 
-    def convert_line_to_json(self, at):
+    def _line2json(self, at):
         labels = self._labels
         topics = self._lines[at]
         lst = []
-        line = {'topics':lst, 'words':None}
+        line = {'topics': lst}
 
         for t in topics:
             sublst = []
@@ -40,7 +40,7 @@ class VisLineFormat:
     def to_json_lst(self):
         lst = []
         for i in range(len(self._lines)):
-            json_str = self.convert_line_to_json(i)
+            json_str = self._line2json(i)
             lst.append(json_str)
         return lst
 
