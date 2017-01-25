@@ -5,20 +5,26 @@ __author__ = 'Ran Xiao'
 # built in
 import time
 import json
+import entry
 from functools import partial
-from multiprocessing import Pool, Lock, cpu_count, Manager
+from collections import Counter
+from multiprocessing import Pool, cpu_count
 
 # 3rd-party
 from nltk.tokenize import RegexpTokenizer, sent_tokenize
 from nltk import pos_tag
+from nltk.stem import WordNetLemmatizer
 
 # Constants
 NOUN_TYPES = ('NN','NNS','NNP','NNPS')
-word_tokenizer = RegexpTokenizer(r'[a-z]+')
-individual_cache = {}
+word_tokenizer = RegexpTokenizer(r'[a-zA-Z]+')
+DATA_PATH = '/Users/ranxiao/Desktop/data/arXiv'
+
+# Acquired resources
+lemmatizer = WordNetLemmatizer()
 
 
-def _preprocess_document(text, cache=None):
+def predoc(text):
     """
     turn text into a list of tokens aka list of string for lda
     :param text:
@@ -26,61 +32,60 @@ def _preprocess_document(text, cache=None):
     """
     result = []
     # convert upper case to lower case
-    text = text.lower()
     for sent in sent_tokenize(text):
         # tokenize words
         words = [word for word in word_tokenizer.tokenize(sent)]
         # get sent components
         sent_components = pos_tag(words)
-        # sent_components = pos_tagger.tag(words) # doesn't run well, as the pos_tagger is just a wrapper of java cli.
+        # lemmatization
+        sent_components = [(lemmatizer.lemmatize(w), t) if t in NOUN_TYPES else (w, t) for (w, t) in sent_components]
+        # merge
         sent_components = merge_components(sent_components)
-        for w, t in sent_components:
-            if t in NOUN_TYPES:
-                result.append(w)
-    # filter out random characters
-    result = [test_ngrams(text, x, cache) for x in result]
-    ret = [w for w in result if len(w) > 2]
-    # print(ret) # for debugging
-    return ret
+        # get only nouns
+        nouns = [w for w, t in sent_components if t in NOUN_TYPES]
 
-# install a cache
-preprocess_document = partial(_preprocess_document, cache=individual_cache)
+        result.extend(nouns)
+    # get lower
+    return [x.lower() for x in result]
 
 
-def test_ngrams(text, phrase, cache=None, threshold=0.1, minimium_count=2):
-    """
-    simple function to test to see whehter a given ngram should be included.
-    if a collocation is worthy to be included, return the collocation, otherwise return second part of the collocation
-    for example, white house, if it appears at least greater than or equal to the minimum count in the document, and
-    frequency of white house over frequency of house is over the threshold in the entire document, return white house,
-    otherwise, return house.
-    :param text: str
-    :param phrase: ex white_house
-    :return: white_house or house depend on the situation
-    """
-    # make the text is in lowercase ( Hidden Markov chain != markov chain)
-    phrase = phrase.replace('_', ' ')
-    components = phrase.split()
-    if len(components) == 1:
-        return phrase
-    i=1
-    while i < len(components):
+def find_ngrams(lst_str, threshold=0.1, minimum=5):
+    word_freq = Counter(lst_str)
+    unique_words = word_freq.keys()
+    n_grams = []
+    for w in unique_words:
+        if '_' in w:
+            cur = w
+            while '_' in cur:
+                next_ = cur[(cur.find('_')+1):]
+                if (word_freq[cur] and # greater than 0
+                    word_freq[next_] >= minimum and # pass minimum check
+                    word_freq[cur] / (word_freq[cur] + word_freq[next_] > threshold) # pass threshold check
+                    ): # find n_gram
+                    n_grams.append(cur)
+                    break
+                else:
+                    cur = next_
+    return set(n_grams) # hashset for fast lookups
 
-        # check to see if the phrase has been identified
-        if cache and '_'.join(components[i-1:]) in cache:
-            return '_'.join(components[i-1:])
 
-        phrase_count = text.count(phrase)
-        sub_phrase = ' '.join(components[i:])
-        sub_phrase_count = text.count(sub_phrase)
-        if phrase_count > minimium_count and phrase_count / sub_phrase_count >= threshold:
-            break
-        phrase = sub_phrase
-        i += 1
-    ret = phrase.replace(' ', '_')
-    if cache:
-        cache[ret] = None
-    return ret
+def get_result(known, nouns):
+    transformed = []
+    for w in nouns:
+        if '_' not in w:
+            transformed.append(w)
+        else:
+            cur = w
+            added = False
+            while '_' in cur:
+                if cur in known:
+                    transformed.append(cur)
+                    added = True
+                    break
+                cur = cur[(cur.find('_')+1):] # beautiful_painting -> painting
+            if not added:
+                transformed.append(cur)
+    return transformed
 
 
 def merge_components(sent_components):
@@ -113,15 +118,19 @@ if __name__ == '__main__':
     start = time.time()
     # create processing pool
     pool = Pool(cpu_count())
-    # get input
-    print('get input...')
 
     for i in range(2000, 2017):
-        INPUT = json.load(open("raw/raw_{}.json".format(i)))
         print('processing {}...'.format(i))
-        lst = pool.map(preprocess_document, INPUT)
-        print('dump processed data to json...')
-        json.dump(lst, open('processed/processed_{}.json'.format(i), 'w'))
-        print('finished after {}s'.format(time.time()-start))
+        INPUT = json.load(open(DATA_PATH + "/raw/raw_{}.json".format(i)))
+        INPUT = [entry.Entry(x).summary for x in INPUT]
+        lst_lst_nouns = pool.map(predoc, INPUT)
+        lst_nouns = [x for l in lst_lst_nouns for x in l]
+        n_grams = find_ngrams(lst_nouns)
+        # share n_grams across multiple processes
+        target = partial(get_result, n_grams)
+        result = pool.map(target, lst_lst_nouns)
+        json.dump(result, open(DATA_PATH+'/processed/processed_{}.json'.format(i), 'w'))
+    pool.close()
+
 
 

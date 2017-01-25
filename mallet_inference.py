@@ -14,9 +14,9 @@ if __name__ == '__main__':
     all_words = []
     ts = 17
     ti = 30
-    topic_frequency = [[0] * ti for x in range(ts)]
+    topic_frequency = []
     dictionary = Dictionary.load(DATA_PATH+'/arxiv_dict.dict')
-    for y in range(2000, 2002):
+    for y in range(2000, 2017):
         lst = json.load(open(DATA_PATH+'/processed/processed_{}.json'.format(y)))
         # constructing a document-term matrixcorpus = [dictionary.doc2bow(x) for x in lst]
         mallet = LdaMallet.load(DATA_PATH+'/mallet_files/arxiv_{}_mallet_model'.format(y))
@@ -29,4 +29,4 @@ if __name__ == '__main__':
             topic_frequency_at[i] = counter[i]
         topic_frequency.append(topic_frequency_at)
     print(topic_frequency)
-    json.dump(topic_frequency, open(DATA_PATH+'/topic_freqs.json', 'w'))
+    json.dump(topic_frequency, open('topic_freqs.json', 'w'))

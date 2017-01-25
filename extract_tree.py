@@ -196,7 +196,7 @@ def extract(tc, n, verbose=False):
 
 
 if __name__ == '__main__':
-    tc = TopicChain('topic_keys.json', threshold=0.35, max_incoming=2, max_outgoing=1)
+    tc = TopicChain('topic_keys.json', threshold=0.3, max_incoming=2, max_outgoing=1)
     print(extract(tc, 10, verbose=True))
 
 

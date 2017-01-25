@@ -7,9 +7,10 @@ class VisLineFormat:
     lines: list<list<DynamicTopic>>
     """
 
-    def __init__(self, lines, labels):
+    def __init__(self, lines, labels, topic_freqs):
         self._lines = lines
         self._labels = labels
+        self._freqs = topic_freqs
 
     def _line2json(self, at):
         labels = self._labels
@@ -21,7 +22,7 @@ class VisLineFormat:
             sublst = []
             sublst.append(labels[t.ts]) # add label
             sublst.append(str(t.ts) + str(t.ti)) #positional index
-            sublst.append(3000) # popularity
+            sublst.append(self._freqs[t.ts][t.ti]) # occurances
             sublst.append([(p, w) for w, p in t.top_word_distribution(20)])
             lst.append(sublst)
         # add in the pointer
@@ -46,12 +47,13 @@ class VisLineFormat:
 
 
 if __name__ == '__main__':
-    tc = TopicChain('topic_keys.json', threshold=0.35, max_incoming=2, max_outgoing=1)
+    tc = TopicChain('topic_keys.json', threshold=0.25, max_incoming=2, max_outgoing=1)
+    topic_freqs = json.load(open('topic_freqs.json'))
 
-    trees = extract(tc, 8)
+    trees = extract(tc, 10)
     lst = []
     for i, t in enumerate(trees):
-        vis = VisLineFormat(t, list(range(2000, 2017)))
+        vis = VisLineFormat(t, list(range(2000, 2017)), topic_freqs)
         json_lst = vis.to_json_lst()
         lst.extend(json_lst)
 
