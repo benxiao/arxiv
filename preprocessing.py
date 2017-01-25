@@ -5,7 +5,6 @@ __author__ = 'Ran Xiao'
 # built in
 import time
 import json
-import entry
 from functools import partial
 from collections import Counter
 from multiprocessing import Pool, cpu_count
@@ -14,6 +13,9 @@ from multiprocessing import Pool, cpu_count
 from nltk.tokenize import RegexpTokenizer, sent_tokenize
 from nltk import pos_tag
 from nltk.stem import WordNetLemmatizer
+
+# my code
+import entry
 
 # Constants
 NOUN_TYPES = ('NN','NNS','NNP','NNPS')
@@ -69,7 +71,14 @@ def find_ngrams(lst_str, threshold=0.1, minimum=5):
     return set(n_grams) # hashset for fast lookups
 
 
-def get_result(known, nouns):
+def get_result(nouns, known=None):
+    """
+    :param known:
+    :param nouns:
+    :return:
+    """
+    if not known:
+        raise ValueError('known cannot be None')
     transformed = []
     for w in nouns:
         if '_' not in w:
@@ -127,7 +136,7 @@ if __name__ == '__main__':
         lst_nouns = [x for l in lst_lst_nouns for x in l]
         n_grams = find_ngrams(lst_nouns)
         # share n_grams across multiple processes
-        target = partial(get_result, n_grams)
+        target = partial(get_result, known=n_grams)
         result = pool.map(target, lst_lst_nouns)
         json.dump(result, open(DATA_PATH+'/processed/processed_{}.json'.format(i), 'w'))
     pool.close()

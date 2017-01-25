@@ -2,7 +2,6 @@ from topic_chain import *
 from extract_tree import *
 
 class VisLineFormat:
-
     """
     lines: list<list<DynamicTopic>>
     """
@@ -52,7 +51,7 @@ if __name__ == '__main__':
 
     trees = extract(tc, 10)
     lst = []
-    for i, t in enumerate(trees):
+    for (i, t) in enumerate(trees):
         vis = VisLineFormat(t, list(range(2000, 2017)), topic_freqs)
         json_lst = vis.to_json_lst()
         lst.extend(json_lst)
