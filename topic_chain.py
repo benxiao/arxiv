@@ -32,7 +32,6 @@ class DynamicTopic:
         d = self._dm.get_topic_keys(self.ts, self.ti)
         return sorted(d.items(), key=lambda x: -x[-1])[:n]
 
-
     def next(self):
         next_time_slice = self._time_slice + 1
         if next_time_slice > len(self._dm._conn):
@@ -56,7 +55,19 @@ class DynamicTopic:
         common = set(dynamic_topics[0].top_words)
         for i in range(1, len(dynamic_topics)):
             common = common.intersection(set(dynamic_topics[i].top_words))
-        return list(common)[:n]
+
+        word_ranks = []
+        for w in common:
+            rank = 0
+            for dt in dynamic_topics:
+                rank += dt.top_words.index(w)
+            word_ranks.append((w, rank))
+
+        word_ranks = [(w, 0) if '_' in w else (w, r) for w, r in word_ranks] # move n-grams to the front
+        sorted_ranks = sorted(word_ranks, key=lambda x:x[1])
+        return [w for w, _ in sorted_ranks][:n]
+
+
 
 class TopicChain:
     """

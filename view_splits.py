@@ -1,5 +1,7 @@
 from topic_chain import *
 
+
+# Testing only not used for anything else
 # this code only works, if the max_incoming is set to 2 and max_outgoing=1, threshold can be adjusted
 
 
@@ -68,7 +70,7 @@ def depth(node):
 
 
 def _get_tree(root, root_topic):
-    prevs = root_topic.prev()
+    prevs = root_topic.next()
     if len(prevs) > 0:
         if len(prevs) > 1:
             right = Node([prevs[1]],parent=root)
@@ -179,8 +181,6 @@ def squeeze(tree):
     return tree
 
 
-
-
 def extract(tc, n, verbose=False):
     forest = get_forest(tc)
     top_n = sorted(forest, key=get_size, reverse=True)[:n]
@@ -194,19 +194,9 @@ def extract(tc, n, verbose=False):
     top_n_ordered = [in_order(x) for x in top_n]
     return top_n_ordered
 
-
 if __name__ == '__main__':
-    tc = TopicChain('topic_keys.json', threshold=0.3, max_incoming=2, max_outgoing=1)
-
-    topic_locs = [(16,8), (15,13), (14,24), (13, 6)]
-    dts = [tc.get_dynamic_topic(*x) for x in topic_locs]
-    print(DynamicTopic.common_words(dts, 10))
-
-
-    #print(extract(tc, 10, verbose=True))
-
-
-
-
-
-
+    tc = TopicChain('topic_keys.json', threshold=0.24, max_incoming=1, max_outgoing=2)
+    for i in range(30):
+        dt = tc.get_dynamic_topic(0, i)
+        print(get_tree(dt))
+        print('*' * 300)

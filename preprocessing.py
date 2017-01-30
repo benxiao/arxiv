@@ -117,6 +117,7 @@ def merge_components(sent_components):
             last = merged[-1]
             new_word = last[0] + '_' + w
             merged[-1] = (new_word, t)
+
         else:
             merged.append((w, t))
         prev = t
