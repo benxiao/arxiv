@@ -16,6 +16,7 @@ class DynamicTopic:
         self._time_slice = time_slice
         self._topic_n = topic_n
 
+
     @property
     def ts(self):
         return self._time_slice
@@ -88,6 +89,11 @@ class TopicChain:
     def table(self):
         # don't write to it # pretend it is read only
         return self._conn
+
+
+    @property
+    def shape(self):
+        return len(self.table)+1, len(self.table[0])
 
     @property
     def nkeys(self):
