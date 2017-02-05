@@ -4,6 +4,7 @@ from topic_chain import *
 
 TAB = ' '*4
 
+
 class ConnectedComponents:
     def __init__(self, tc):
         self._ts, self._ti = tc.shape
@@ -15,7 +16,7 @@ class ConnectedComponents:
 
     def _adj(self, ts, ti):
         dt = self._tc.get_dynamic_topic(ts, ti)
-        for dt in dt.next() + dt.prev():
+        for dt in (dt.next() + dt.prev()):
             yield dt.ts, dt.ti
 
     def _next(self, ts, ti):
@@ -56,19 +57,21 @@ class ConnectedComponents:
         ids = [i for i, _ in counter.most_common()[:n]]
         return self.get_dot_with(ids)
 
-    def get_dot_with(self, ids):
+    def get_dot_with(self, ids, nwords=8):
         edges = []
         for id_ in ids:
             edges.append(self.get_group_with(id_))
         chained = chain(*edges)
         strs = []
         for ts, ti in chained:
+            tws_1 = ', '.join(self._tc.get_dynamic_topic(ts, ti).top_words[:nwords])
             for nts, nti in self._next(ts, ti):
-                strs.append('\"({},{})\" -> \"({},{})\";'.format(ts, ti, nts, nti))
+                tws_2 = ', '.join(self._tc.get_dynamic_topic(nts, nti).top_words[:nwords])
+                strs.append('\"({},{}):{}\" -> \"({},{}):{}\";'.format(ts, ti, tws_1, nts, nti, tws_2))
         return "digraph unix {\n"+TAB+"size=\"6,6\";\n"+TAB+'\n{}'.format(TAB).join(strs)+ "\n}"
 
 
 if __name__ == '__main__':
     tc = TopicChain('topic_keys.json', max_incoming=2, max_outgoing=2, threshold=0.24)
     cc = ConnectedComponents(tc)
-    print(cc.get_dot_with([1]))
+    print(cc.get_largest(4))

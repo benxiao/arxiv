@@ -33,13 +33,12 @@ def predoc(text):
     :return:
     """
     result = []
-    # convert upper case to lower case
     for sent in sent_tokenize(text):
         # tokenize words
         words = [word for word in word_tokenizer.tokenize(sent)]
         # get sent components
         sent_components = pos_tag(words)
-        # lemmatization
+        # lemmatization the case information helps the lemmatization.
         sent_components = [(lemmatizer.lemmatize(w), t) if t in NOUN_TYPES else (w, t) for (w, t) in sent_components]
         # merge
         sent_components = merge_components(sent_components)
@@ -73,6 +72,7 @@ def find_ngrams(lst_str, threshold=0.1, minimum=5):
 
 def get_result(nouns, known=None):
     """
+
     :param known:
     :param nouns:
     :return:

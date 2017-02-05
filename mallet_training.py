@@ -4,7 +4,7 @@ from gensim.models.wrappers.ldamallet import LdaMallet
 from multiprocessing import cpu_count
 
 MALLET_PATH='/usr/local/Cellar/mallet/2.0.7/bin/mallet'
-DATA_PATH = '/Users/ranxiao/Desktop/data/arXiv'
+DATA_PATH = '../data/arXiv'
 
 if __name__ == '__main__':
     entire_corpus = []
