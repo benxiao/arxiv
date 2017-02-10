@@ -131,7 +131,7 @@ def get_forest(topic_chain):
 
             # orphan node not connected to any tree
             if not conns[i][j] and (i, j) in topics_remain:
-                forest.append(Node(topic_chain.get_dynamic_topic(i,j)))
+                forest.append(Node([topic_chain.get_dynamic_topic(i,j)]))
                 topics_remain.remove((i,j))
 
             else:
